@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common :: head(申请)"></head> 
+<th:block th:replace="import :: datatables" />
+<body>
+	<div class="container">
+		<ul th:replace="common :: menu">
+			<li><a href="/workdesk">申请</a></li>
+			<li><a href="/workdesk/tasklist">未处理</a></li>
+			<li><a href="/workdesk/invitelist">受邀</a></li>
+			<li><a href="#">已处理</a></li>
+		</ul>
+		<div th:replace="common :: title(申请)"></div>
+		<table id="process" class="table table-striped table-bordered" ></table>
+	</div>
+</body>
+<script>
+var table=$('#process').DataTable({
+	ajax:'/data/workdesk/applylist',
+	columns:[
+	         {data:'name',title:'Process Name'},
+	         {data:'description',title:'Description'},
+	         {data:null,
+	          className:'center',
+	          defaultContent:'<a href="#" class="_startProcess">Start</a>'}
+	         ]})
+$('#process tbody').on('click','a._startProcess',function(){
+	var tr = $(this).closest('tr');
+    var row = table.row( tr );
+    
+    //console.log(row.data().key)
+    $.post('/data/workdesk/startProcess',{processKey:row.data().key},function(data){
+    	if(data)
+    		location.href='/workdesk/tasklist'
+    })
+    
+})
+</script>
+</html>

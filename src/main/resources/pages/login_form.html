@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+<title>Login Form</title>
+</head>
+<body>
+	<h1 th:inline="text">Login Form</h1>
+	<a href="/initlogin">init login</a>
+	<a href="/workdesk">Work Desk</a>
+	<form action="/login" method="post">
+		<input type="text" name="userId"/>
+		<input type="text" name="password"/>
+		<input type="submit" value="Submit1"/>
+	</form>
+</body>
+</html>

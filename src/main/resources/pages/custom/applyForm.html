@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common::head(报销申请)">
+</head>
+<th:block th:replace="import::form" />
+<body>
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<ul class="nav navbar-nav navbar-left">
+				<li><a href="javascript:history.back(-1)" class=""><i
+						class="fa fa-angle-left"></i></a></li>
+			</ul>
+			<ul class="nav navbar-nav navbar-right">
+				<th:block th:if="${pageType eq 'apply'}">
+					<li><a href="#" class="" id="applyBtn">提交</a></li>
+					<li><a href="#" class="" id="temporaryBtn">临时保存</a></li>
+				</th:block>
+				<th:block th:unless="${pageType eq 'apply'}">
+					<li><a href="#" class="" id="approveBtn">批准</a></li>
+					<li th:class="${not canSendBack}? 'disabled'"><a href="#" class="" id="sendBackBtn">退回</a></li>
+				</th:block>
+			</ul>
+
+		</div>
+	</nav>
+	<div class="container">
+		<div class="modal fade" id="sendBackModal" tabindex="-1" role="dialog">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"
+							aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title" id="myModalLabel">选择退回节点</h4>
+					</div>
+					<div class="modal-body">
+						<div class="container" th:if="${canSendBack}"
+							th:each="sendback : ${sendBackTargets}">
+							<div class="radio">
+								<label th:inline="text"> <input type="radio"
+									name="_sendBackTarget" th:value="${sendback.activitiId}">
+									[[${sendback.activitiId}]]
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+						<button id="_sendBackConfirm" type="button"
+							class="btn btn-success">退回</button>
+						<script>
+							$('#_sendBackConfirm').click(
+									function() {
+										swal({
+											title : "确定要退回吗？",
+											//text : "临时保存不会提交这个申请",
+											type : "info",
+											showCancelButton : true,
+											closeOnConfirm : false,
+											showLoaderOnConfirm : true,
+										}, function() {
+											$('form').ajaxSubmit({
+												url:'/reimburse/sendback',
+												data:{sendbackTarget:$('#sendBackModal input[name=_sendBackTarget]:checked').val()},
+												success:function(){
+													swal({
+														title : "已退回成功",
+														//text: "Submit to run ajax request",
+														type : "success"
+													}, function() {
+														location.href = "/workdesk/tasklist"
+													})
+												}
+											})
+										});
+										return false;
+									})
+						</script>
+					</div>
+				</div>
+			</div>
+		</div>
+		<form method="post">
+			<div class="panel panel-default">
+				<div class="panel-heading">申请人信息</div>
+				<div class="panel-body">
+					<input type="hidden" name="taskId" th:value="${taskId}" />
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="control-label" for="processId">案件号</label>
+								<div class="input-group">
+									<div class="input-group-addon">
+										<i class="fa fa-cube"></i>
+									</div>
+									<input type="text" id="itemName" name="itemName"
+										class="form-control" placeholder="" maxlength="20"
+										th:value="${processId}" disabled="disabled" />
+								</div>
+								<span class="help-block">案件号是案件的唯一标识，可以通过案件号快速查询和跟踪案件</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="control-label" for="depId">部门</label>
+								<div class="input-group">
+									<div class="input-group-addon">
+										<i class="fa fa-sitemap"></i>
+									</div>
+									<select class="form-control selectpicker" id="depId"
+										name="depId" th:disabled="${isReadOnly}">
+										<option value="dep1">人事部</option>
+										<option value="dep1">财务部</option>
+										<option value="dep1">战略强化小组</option>
+									</select>
+								</div>
+								<span class="help-block">您所在多个部门均可提交该申请，请选择从哪个部门提交该申请</span>
+							</div>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="control-label" for="applicant">申请人</label>
+								<div class="input-group">
+									<div class="input-group-addon">
+										<i class="fa fa-user"></i>
+									</div>
+									<input type="text" id="applicant" name="applicant"
+										class="form-control" placeholder="" maxlength="20"
+										th:value="${applicant}" disabled="disabled" />
+								</div>
+								<span class="help-block">此案件的申请人姓名</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label class="control-label" for="applyDate">申请日期</label>
+								<div class="input-group">
+									<div class="input-group date">
+										<div class="input-group-addon">
+											<i class="fa fa-calendar"></i>
+										</div>
+										<input type="text" id="applyDate" name="applyDate"
+											class="form-control" value="2016/11/11" disabled="disabled"
+											th:value="${#calendars.format(applyDate,'yyyy/MM/dd')}" />
+									</div>
+								</div>
+								<span class="help-block">此案件的提交日期</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="panel panel-default">
+				<div class="panel-heading">报销信息</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label for="itemName" class="control-label">报销款项</label>
+								<div class="input-group">
+									<div class="input-group-addon">
+										<i class="fa fa-pencil"></i>
+									</div>
+									<input type="text" id="itemName" name="itemName"
+										class="form-control" placeholder="" maxlength="20"
+										th:disabled="${isReadOnly}" th:value="${reimburse.itemName}" />
+								</div>
+								<span class="help-block">请填写报销名称或内容</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label for="amount" class="control-label">金额</label>
+								<div class="input-group">
+									<div class="input-group-addon">
+										<i class="fa fa-rmb"></i>
+									</div>
+									<input type="text" id="amount" name="amount"
+										class="form-control" placeholder="" maxlength="20"
+										data-inputmask="'alias':'currency'" value="0"
+										th:disabled="${isReadOnly}" th:value="${reimburse.amount}" />
+								</div>
+								<span class="help-block">请填写报销金额（人民币）</span>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			<div class="panel panel-default">
+				<div class="panel-heading">备注/审批建议</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-12">
+							<div class="form-group">
+								<label for="comment" class="control-label">Text Area</label>
+								<textarea id="comment" name="comment" class="form-control"
+									maxlength="200" rows="4"></textarea>
+								<span class="help-block">备注或审批建议（选填）</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<script>
+		var validator
+		$(function() {
+			$(":input").inputmask();
+			validator = $('form').validate({
+				rules : {
+					itemName : 'required'
+				}
+			});
+
+			$('#applyBtn').click(function() {
+				if (validator.form())
+					swal({
+						title : "确定要提交申请吗？",
+						//text: "Submit to run ajax request",
+						type : "info",
+						showCancelButton : true,
+						closeOnConfirm : false,
+						showLoaderOnConfirm : true,
+					}, function() {
+						$('form').ajaxSubmit({
+							url:'/reimburse/apply',
+							success:function(){
+								swal({
+									title : "申请已提交",
+									//text: "Submit to run ajax request",
+									type : "success"
+								}, function() {
+									location.href = "/workdesk/tasklist"
+								})
+							}
+						})
+					});
+				return false;
+			})
+			$('#temporaryBtn').click(function() {
+				swal({
+					title : "确定要临时保存吗？",
+					text : "临时保存不会提交这个申请",
+					type : "info",
+					showCancelButton : true,
+					closeOnConfirm : false,
+					showLoaderOnConfirm : true,
+				}, function() {
+					//turn off the validation
+					var form = validator.currentForm
+					validator.currentForm = ''
+					$('form').ajaxSubmit({
+							url:'/reimburse/apply?temporary=true',
+							success:function(){
+								swal({
+									title : "已保存成功",
+									//text: "Submit to run ajax request",
+									type : "success"
+								}, function() {
+									location.href = "/workdesk/tasklist"
+								})
+							}
+						})
+					//turn on the validation
+					validator.currentForm = form
+				});
+				return false;
+			})
+			$('#approveBtn').click(function() {
+				swal({
+					title : "确定要批准吗？",
+					//text : "临时保存不会提交这个申请",
+					type : "info",
+					showCancelButton : true,
+					closeOnConfirm : false,
+					showLoaderOnConfirm : true,
+				}, function() {
+					$('form').attr('action', '/reimburse/approve')
+					$('form').ajaxSubmit({
+							url:'/reimburse/approve',
+							success:function(){
+								swal({
+									title : "已批准成功",
+									//text: "Submit to run ajax request",
+									type : "success"
+								}, function() {
+									location.href = "/workdesk/tasklist"
+								})
+							}
+						})
+				});
+				return false;
+			})
+			$('#sendBackBtn').click(function() {
+				if($(this).closest('li').hasClass('disabled'))
+					return false
+				if (validator.form())
+					$('#sendBackModal').modal('show')
+				return false;
+			})
+		})
+	</script>
+</body>
+
+</html>
